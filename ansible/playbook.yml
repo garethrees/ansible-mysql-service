@@ -1,0 +1,45 @@
+---
+
+- name: Install MySQL
+  hosts: mysql-service
+  tasks:
+    - name: Install MySQL
+      action: $ansible_pkg_mgr pkg=mysql-server state=installed
+    - name: Add Python MySQL DB
+      action: $ansible_pkg_mgr pkg=python-mysqldb state=installed
+
+
+- name: Configure MySQL
+  hosts: mysql-service
+  tasks:
+    - name: Configure my.cnf
+      copy: src=./files/my.cnf
+            dest=/etc/mysql/my.cnf
+            owner=root
+            group=root
+            mode=0640
+      notify:
+        - restart mysql
+    
+    - name: Add mysql-user
+      mysql_user: name=mysql_service
+                  password=12345
+                  priv=*.*:ALL
+                  state=present
+      notify:
+        - start mysql
+
+  handlers:
+    - name: start mysql
+      service: name=mysql
+               enabled=yes
+               state=started
+    - name: restart mysql
+      service: name=mysql
+               enabled=yes
+               state=restarted
+
+
+
+# /sbin/iptables -A INPUT -i eth0 -s 192.168.33.0/24 -p tcp --destination-port 3306 -j ACCEPT
+# service iptables save
